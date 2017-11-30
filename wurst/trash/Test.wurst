@@ -1,0 +1,23 @@
+package Test
+import LinkedListModule
+import AbilityObjEditing
+import LinkedList
+
+
+public class A
+	use LinkedListModule
+	
+	function me()
+		print("Iam A")
+	
+public class B extends A
+	static constant int i = 2
+	use LinkedListModule
+	
+	override function me()
+		print(i.toString())
+	
+function test()
+	var w = new LinkedList<int>()
+
+	

@@ -1,0 +1,11 @@
+package MessageDialog
+ 
+import Menu
+import Pane
+
+class MessageDialog extends Window
+	
+	construct()
+		super()
+		
+		

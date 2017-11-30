@@ -1,0 +1,397 @@
+package HeroClass
+	import UnitClass
+	import Setup
+	import CustomClosureEvents
+	import initlater UnitEvents
+	import TimerUtils
+	import initlater Bonus
+	import initlater HeroBar
+	//import Queue 
+	import initlater OrderHandling
+	import HashMap
+	import initlater Spell
+	import initlater ControlPoint
+	import LinkedListModule
+	import LinkedList
+	import HeroTypes
+	import TerrainUtils
+	import InstantDummyCaster
+	import ClosureTimers
+	
+	public int heroCount = 0
+	
+	public class Hero extends Unit
+		use GetOrders
+		use LinkedListModule
+//		static constant HashMap<int, Spell> abiIdToSpell = new HashMap<int, Spell>()
+		static constant LinkedList<Hero> toMove = new LinkedList<Hero>()
+		static constant HashMap<player, Hero> heroOfPlayer = new HashMap<player, Hero>()
+//		static constant timer movespeedX = getTimer()..startPeriodic(0.01, () -> begin
+//			for Hero h in toMove
+//				h.u.setXY(h.u.getPos().polarOffset(h.u.getFacingAngle(), 0.5))
+//			unit own = heroOfPlayer.get(GetLocalPlayer()).u
+//			SetCameraQuickPosition(own.getX(), own.getY())
+//		end)
+		HeroType htyp
+		unit cdum
+		real agi
+		real bonusAgi
+		real bonusAgiPer
+		real str
+		real bonusStr
+		real bonusStrPer
+		real inte
+		real bonusInt
+		real bonusIntPer
+		int armorBuffer = 0
+		int attackBuffer = 0
+		boolean onAdd = false
+		//Order Spell and Capture handling
+ 
+		boolean isCasting = false
+//		Spell castingSpell = null
+		Order nextOrder = null
+		Order lastOrder = null
+		UnitEvent channelCancel = null
+		CaptureCancelEvent captureCancel = null
+		SmartEvent smartEvent = null
+		//Animation handling
+		boolean playsAnimation = false
+		// HeroBar
+		Bar hb
+		//OrderHandling
+		HashMap<timer, int> enableAbility = new HashMap<timer, int>()
+		boolean acceptOrders = true
+		boolean stillNoOrder = false
+		//Spells
+//		Spell spellQ = null
+//		Spell spellW = null
+//		Spell spellE = null
+//		Spell spellR = null
+//		Spell spellD = null
+//		Spell spellF = null
+		
+		construct(string name, vec2 pos, player p)
+			super(name, pos, p)
+			htyp = getHeroType(name)
+			hb = new Bar(this)
+			isHero = true
+			cdum = CreateUnit(Player(0), htyp.dummyId, recycleGraveyard.x, recycleGraveyard.y, 0)
+			cdum.setUserData(this castTo int)
+			doAfter(0.1, () -> addArmor(htyp.getArmor() * 1.))
+			addOrderDetection(cdum)
+			heroOfPlayer.put(p, this)
+		
+			
+		override function kill(Unit source)
+			hb.disable()
+			super.kill(source)
+			
+		function revive(vec2 pos)
+			ReviveHero(u, pos.x, pos.y, true)
+			hb.enable()
+			u.removeAbility('dead')
+			isDead = false
+			for int i = 0 to 11
+				playerDamage.saveReal(i, 0.)
+					
+		function addArmor(real amount)
+			if not onAdd
+				onAdd = true
+				armor += amount
+				super.addAttack(I2R(-attackBuffer))
+				//clean unit
+				updateState(0, armorRaw)
+				updateState(0, lifeRaw)
+				updateState(0, manaRaw)
+				// add Armor
+				Bonus b = bonusArmor(amount - armorBuffer)
+				u.addAbility(htyp.morphId)
+				armorBuffer += roundReal(amount)
+				//bring back the old unit
+				doAfter(0.025, () -> begin
+					onAdd = false
+					super.addAttack(I2R(attackBuffer))
+					updateArmor()
+					updateLife()
+					updateMana()
+					destroy b
+				end)
+			else
+				print("Armor was added while morphing")
+			
+					
+		override function addAttack(real amount)
+			attackBuffer += roundReal(amount)
+			super.addAttack(amount)
+			
+		function getAgi(boolean withBonus) returns real
+			if withBonus
+				return (agi + bonusAgi) * (1. + (bonusAgiPer / 100))
+			else
+				return agi
+				
+		function getStr(boolean withBonus) returns real
+			if withBonus
+				return (str + bonusStr) * (1. + (bonusStrPer / 100))
+			else
+				return str
+				
+		function getInt(boolean withBonus) returns real
+			if withBonus
+				return (inte + bonusInt) * (1. + (bonusIntPer / 100))
+			else
+				return inte
+				
+		override function dealDamage(real amount, Unit source, boolean bonus) returns boolean
+			hb.update()
+			return super.dealDamage(amount, source, bonus)
+
+		override function updateLife()
+			hb.updateEx()
+			super.updateLife()
+			
+		override function updateMana()
+			hb.updateEx()
+			super.updateMana()
+			
+		override function updateMovespeed()
+			super.updateMovespeed()
+			if getMovespeed(true) > 522
+				toMove.add(this)
+			else
+				toMove.remove(this)
+				
+		override function causeHeal(real amount) returns real
+			hb.update()
+			return super.causeHeal(amount)
+				
+		function getBarPos() returns vec3
+			return vec3(u.getX() - 80, u.getY(), GetUnitFlyHeight(u) + 200)
+							
+		function getCaptureAttackPoint(vec2 cpPos) returns vec3
+			vec3 pos = getMiddle()
+			vec3 offset = htyp.getCaptureOffset()
+			vec2 offset2 = offset.toVec2()
+			offset2 = offset2.rotate(pos.toVec2().angleTo(cpPos).degrees() * (-1.).asAngleDegrees())
+			offset2.y = -offset2.y
+			return pos + offset2.withZ(offset.z)
+			
+		private static function enableAbilityTimed()
+			timer t = GetExpiredTimer()
+			thistype obj = t.getData() castTo thistype
+			SetPlayerAbilityAvailable(obj.owner, obj.enableAbility.get(t), true)
+			t.release()
+			t = null
+			
+		private function addAbilityCastProtection(int abiId)
+			SetPlayerAbilityAvailable(owner, abiId, false)
+			timer t = getTimer()
+			t.setData(this castTo int)
+			enableAbility.put(t, abiId)
+			t.start(0.0, function enableAbilityTimed)
+			
+		override function isUnitEnemy(unit other) returns boolean
+			return IsUnitEnemy(other, owner)
+					
+		override function onMoveOrder(vec2 pos)
+			Order o = () -> u.issuePointOrder("move", pos)
+			if isCasting
+				setNextOrder(o)
+				setLastOrder(o)
+			else
+				setLastOrder(o)
+				u.issuePointOrder("move", pos)
+			if captureCancel != null
+				captureCancel.fire()
+			if smartEvent != null
+				smartEvent.fire(pos)
+			
+		override function onAttackOrder(Unit target)
+			Order o = () -> u.issueTargetOrder("attack", target.u)
+			if isCasting
+				setNextOrder(o)
+				setLastOrder(o)
+			else
+				setLastOrder(o)
+				u.issueTargetOrder("attack", target.u)
+			if captureCancel != null
+				captureCancel.fire()
+			if smartEvent != null
+				smartEvent.fire(target)
+			
+		override function onStopOrder()
+			if isCasting
+				//maybe castingSpell.stop()
+			else
+				IssueImmediateOrder(u, "stop")
+			setLastOrder(null)
+			setNextOrder(null)
+			if captureCancel != null
+				captureCancel.fire()
+			
+				
+		override function onCaptureOrder(ControlPoint target)
+			Order o = () -> begin
+				if target.wantCapture(this)
+					u.issuePointOrder("move", target.pos2)
+				if captureCancel != null
+					captureCancel.fire(target)
+			end
+			if isCasting
+				setNextOrder(o)
+				setLastOrder(o)
+			else
+				if target.wantCapture(this)
+					u.issuePointOrder("move", target.pos2)
+				if captureCancel != null
+					captureCancel.fire(target)
+				setLastOrder(o)
+		
+		override function onScoreOrder()
+			print("Score")
+			
+//		override function onSpellCastQ(order o)
+//			attendCast(spellQ, o)
+//		
+//		override function onSpellCastW(order o)
+//			attendCast(spellW, o)
+//		
+//		override function onSpellCastE(order o)
+//			attendCast(spellE, o)
+//		
+//		override function onSpellCastR(order o)
+//			attendCast(spellR, o)
+//		
+//		override function onSpellCastD(order o)
+//			attendCast(spellD, o)
+//		
+//		override function onSpellCastF(order o)
+//			attendCast(spellF, o)
+//		
+//		function attendCast(Spell s, order o)
+//			if isCasting
+//				setNextOrder(() -> s.callOnCast(o))
+//			else	
+//				s.callOnCast(o)
+//			if captureCancel != null
+//				captureCancel.fire()
+			
+		function playCaptureAnimation()
+			if htyp.hasPeriodicAnimation()
+				//TODO
+			else
+				playAnimation(htyp.getCaptureAnimationIndex(), htyp.getCaptureAnimationSpeed())
+			
+		function playAnimation(int index)
+			if playsAnimation
+				print("New animation was played before the old one was stopped")
+			playsAnimation = true
+			SetUnitAnimationByIndex(u, index)
+			
+		function playAnimation(int index, real speed)
+			if playsAnimation
+				print("New animation was played before the old one was stopped")
+			playsAnimation = true
+			u.setTimeScale(speed)
+			SetUnitAnimationByIndex(u, index)
+				
+		function stopAnimation()
+			if not playsAnimation
+				print("No animation to stop")
+			playsAnimation = false
+			u.setTimeScale(1)
+			SetUnitAnimationByIndex(u, htyp.getStandAnimationIndex())
+						
+		function enableAutoAttack(boolean enable)
+			if not enable
+				InstantDummyCaster.castTarget(DUMMY_PLAYER, 'noat', 1, "thunderbolt", u)
+			else
+				u.removeAbility('sthe')
+		
+		function registerChannelCancel(Action<Unit> action) returns Action<Unit>
+			if channelCancel == null
+				channelCancel = new UnitEvent()
+			return channelCancel.addAction(action)
+			
+		function registerSmartOrder(Action<SmartData> action) returns Action<SmartData>
+			if smartEvent == null
+				smartEvent = new SmartEvent(this)
+			return smartEvent.addAction(action)
+			
+		function registerCaptureCancel(Action<ControlPoint> action) returns Action<ControlPoint>
+			if captureCancel == null
+				captureCancel = new CaptureCancelEvent()
+			return captureCancel.addAction(action)
+			
+		function channelCancel()
+			channelCancel.fire(this)
+			
+		function setNextOrder(Order o)
+			if nextOrder != null
+				destroy nextOrder
+			this.nextOrder = o
+			
+		function setLastOrder(Order o)
+			if lastOrder != null
+				destroy lastOrder
+			this.lastOrder = o
+			
+//		function castReservation(real time, Spell casted)
+//			if isCasting
+//				print("new cast started before the old ended")
+////			castingSpell = casted
+//			isCasting = true
+//			enableAutoAttack(false)
+//			getTimer()..setData(this castTo int).start(time, () -> begin
+//				Hero h = GetExpiredTimer().getData() castTo thistype
+//				h.isCasting = false
+////				h.castingSpell = null
+//				h.enableAutoAttack(true)
+//				if h.nextOrder != null
+//					h.nextOrder.issue()
+//				else if h.lastOrder != null
+//					h.lastOrder.issue()
+//				GetExpiredTimer().release()
+//			end)
+				
+	class SmartEvent extends Event<SmartData>
+		Hero owner
+		
+		construct(Hero h)
+			owner = h
+		
+		function fire(vec2 target)
+			var data = new SmartData()
+			data.source = owner
+			data.pos = target
+			data.target = null
+			callActions(data)
+			destroy data
+			
+		function fire(Unit target)
+			var data = new SmartData()
+			data.source = owner
+			data.pos = vec2(0,0)
+			data.target = target
+			callActions(data)
+			destroy data
+		
+	public class SmartData
+		Hero source
+		Unit target
+		vec2 pos
+		
+	class CaptureCancelEvent extends Event<ControlPoint>
+		
+		function fire(ControlPoint t)
+			callActions(t)
+			
+		function fire()
+			callActions(null)
+			
+	abstract class Order
+		
+		abstract function issue()
+		
+endpackage
