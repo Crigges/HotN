@@ -1,7 +1,13 @@
 package OrderHandling
 
-	import ControlPoint
 	import AbilityObjEditing
+	import ControlPoint
+	import CustomClosureEvents
+	import UnitEvents
+	import HeroClass
+	import UnitClass
+	import Spell
+	import HashMap
 
 	//OrderIds
 	public constant int smartId 				= 851971
@@ -28,9 +34,17 @@ package OrderHandling
 
 	public module GetOrders
 		static trigger orderDetect = CreateTrigger()..addAction(function callOnOrder)
-		
-		static function addOrderDetection(unit u)
+		boolean isCasting = false
+		boolean isChanneling = false
+		Order nextOrder = null
+		Order lastOrder = null
+		UnitEvent channelCancel = null
+		CaptureCancelEvent captureCancel = null
+		SmartEvent smartEvent = null
+		HashMap<SpellKey, Spell> spellMap = new HashMap<SpellKey, Spell>()
 
+
+		static function addOrderDetection(unit u)
 			u.addAbility(stopSpell)
 			u.addAbility(attackSpell)
 			u.addAbility(scoreboardSpell)
@@ -55,47 +69,31 @@ package OrderHandling
 					if u == null
 						h.onMoveOrder(pos)
 					else
-						if u.getTypeId() == modelMorphed
+						if u.getTypeId() == modelMorphed //capturepoint target
 							h.onCaptureOrder(u.getUserData() castTo ControlPoint)
 						else	
 							if h.isUnitEnemy(u)
 								h.onAttackOrder(u.getUserData() castTo thistype)
 							else
 								h.onMoveOrder(u.getPos())
-//				case qSpellId
-//					h.onSpellCastQ(order(pos, u))
-//				case wSpellId
-//					h.onSpellCastW(order(pos, u))
-//				case eSpellId
-//					h.onSpellCastE(order(pos, u))
-//				case rSpellId
-//					h.onSpellCastR(order(pos, u))
-//				case dSpellId
-//					h.onSpellCastD(order(pos, u))
-//				case fSpellId
-//					h.onSpellCastF(order(pos, u))
+				case qSpellId
+					h.onSpellCast(SpellKey.Q, order(pos, u))
+				case wSpellId
+					h.onSpellCast(SpellKey.W, order(pos, u))
+				case eSpellId
+					h.onSpellCast(SpellKey.E, order(pos, u))
+				case rSpellId
+					h.onSpellCast(SpellKey.R, order(pos, u))
+				case dSpellId
+					h.onSpellCast(SpellKey.D, order(pos, u))
+				case fSpellId
+					h.onSpellCast(SpellKey.F, order(pos, u))
 			orderDetect.enable()
 			
 		abstract function isUnitEnemy(unit u) returns boolean
 		
 		abstract function onCaptureOrder(ControlPoint cp)
-		
-//		abstract function onSpellCastQ(order o)
-//		
-//		abstract function onSpellCastW(order o)
-//		
-//		abstract function onSpellCastE(order o)
-//		
-//		abstract function onSpellCastR(order o)
-//		
-//		abstract function onSpellCastD(order o)
-//		
-//		abstract function onSpellCastF(order o)
-		
-//		abstract function onItemCastC(order o)
-//		
-//		abstract function onItemCastV(order o)
-		
+
 		abstract function onMoveOrder(vec2 pos)
 		
 		abstract function onAttackOrder(thistype u)
@@ -103,6 +101,60 @@ package OrderHandling
 		abstract function onStopOrder()
 		
 		abstract function onScoreOrder()
+
+		function onSpellCast(SpellKey key, order o)
+
+							
+		function setNextOrder(Order o)
+			if nextOrder != null
+				destroy nextOrder
+			this.nextOrder = o
+			
+		function setLastSmartOrder(Order o)
+			if lastOrder != null
+				destroy lastOrder
+			this.lastOrder = o
+
+	public class SmartEvent extends Event<SmartData>
+		Hero owner
+				
+		construct(Hero h)
+			owner = h
+				
+		function fire(vec2 target)
+			var data = new SmartData()
+			data.source = owner
+			data.pos = target
+			data.target = null
+			callActions(data)
+			destroy data
+			
+		function fire(Unit target)
+			var data = new SmartData()
+			data.source = owner
+			data.pos = vec2(0,0)
+			data.target = target
+			callActions(data)
+			destroy data
+
+		
+	public class SmartData
+		Hero source
+		Unit target
+		vec2 pos
+
+		
+	public class CaptureCancelEvent extends Event<ControlPoint>
+		
+		function fire(ControlPoint t)
+			callActions(t)
+			
+		function fire()
+			
+
+	public abstract class Order
+			
+		abstract function issue()
 		
 			
 		

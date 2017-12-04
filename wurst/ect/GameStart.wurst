@@ -184,7 +184,7 @@ package GameStart
 			initOrder[6] = "Trackables"
 			initOrder[7] = "CreateDummyItems"
 			initOrder[8] = "Controlpoints"
-			//initOrder[7] = "Menu"
+			initOrder[9] = "Menu"
 		
 		static function startPreload()
 			getTimer().start(1.0, function Preload.preload)
@@ -437,9 +437,6 @@ package GameStart
 					shopPleft = new Pane(element(4, 0), element(16, 20), Layer.L3, 4,false)		
 					shopPmiddle = new Pane(element(23, 14), element(4, 4), Layer.L3, false)	
 					shopPright = new Pane(element(30, 4), element(12, 4), Layer.L2, 4, false)
-					//////////////////////////////////////////////////////////////////////////////////
-					doAfter(10, () -> new Tooltip(element(27, 0), "test2").showDirect(Player(0))) //////////////////////////////////////////////////////////////////////////////////
-					//////////////////////////////////////////////////////////////////////////////////
 					shopPleftBot = new Pane(element(23, 8), element(4, 2), Layer.L3, false)
 					shopPleftBot2 = new Pane(element(23, 1), element(4,6), Layer.L3, false)
 //					
@@ -631,6 +628,7 @@ package GameStart
 					
 					shop32 = new Icon("Hex", element(cc, pp), tt)
 					buttonLayerShop32 = new ImageEx(element(cc, pp), element(tt,tt),"64x64LayerShopIcon.blp", Layer.L1)
+					
 					buttonLayerShop32.content.setColor(color(255, 201, 14))
 
 
@@ -880,8 +878,10 @@ package GameStart
 					scoreWindow.add(pickability3)
 					scoreWindow.add(pickability4)
 					scoreWindow.add(pickability5)
-					scoreWindow.add(pickability6)
 					
+					var obs = new Observable(pickability6)
+					obs.setClickAction((player p) -> new Tooltip(element(10, 10), "test2").showDirect(p))
+					scoreWindow.add(obs)
 					scoreWindow.add(abilityUpgrade1)
 					scoreWindow.add(abilityUpgrade3)
 					scoreWindow.add(abilityUpgrade6)
@@ -969,7 +969,10 @@ package GameStart
 					scoreWindow.add(playerName10)
 					scoreWindow.add(playerName11)
 					scoreWindow.add(playerName12)
-					
+					WindowManager.openWindow(scoreWindow, Player(0))
+					WindowManager.openWindow(scoreWindow, Player(1))
+					applyMenuCameraForPlayer(Player(0))
+					applyMenuCameraForPlayer(Player(1))
 				default
 					ret = -1.
 		
@@ -1033,6 +1036,8 @@ package GameStart
 			case "hideF"
 				//testImg.hideFaded(Player(0))
 				//testImg.hideFaded(Player(1))
+			case "menucam"
+				applyMenuCameraForPlayer(Player(0))
 			case "dis"
 				//ic.disable(Player(0))
 				//testImg.disable(Player(0))
@@ -1099,10 +1104,6 @@ package GameStart
 				last.addShield(100, 10)
 			case "shield3"
 				last.addShield(1000, 10)
-			case "canMove f"
-				last castTo Hero.acceptOrders = false
-			case "canMove t"
-				last castTo Hero.acceptOrders = true
 			case "swap"
 				SetPlayerAbilityAvailable(Player(0), 'A996', false)
 				SetPlayerAbilityAvailable(Player(0), 'A999', true)

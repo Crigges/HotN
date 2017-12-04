@@ -44,10 +44,10 @@ public tuple weaponSoundStat(WeaponSound content, StatType info)
 public tuple armorSoundTypeStat(ArmorSoundType content, StatType info)
 
 /**	
-*	�berblendzeit
+*	Überblendzeit
 *	Ausrichtungs interpolation
 *	Fortbewegungs fenster
-*	R�ckbewegungs und schadenpunkt
+*	Rückbewegungs und schadenpunkt
 */
 public class UnitType
 	static constant int basicId = 'Hpal'

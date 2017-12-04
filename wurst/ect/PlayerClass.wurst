@@ -32,6 +32,7 @@ package PlayerClass
 		timer camSet = getTimer()
 		real sightfield = 40
 		real perspektiv = 295
+		//Menu Camera
 
 		
 		construct(player p)
@@ -40,6 +41,7 @@ package PlayerClass
 			camSet.startPeriodic(1., function setCam)
 			camSet.setData(this castTo int)
 			playerData.put(p, this)
+
 				
 		static function setCam()
 			timer t = GetExpiredTimer()
@@ -60,6 +62,16 @@ package PlayerClass
 				return not(GetCameraEyePositionX() + camWidth < h.u.getX() or GetCameraEyePositionX() - camWidth > h.u.getX() or GetCameraEyePositionY() + camHeightHigh < h.u.getY() or GetCameraEyePositionY() + camHeightLow > h.u.getY())
 			else
 				return false
+
+	public function applyMenuCameraForPlayer(player p)
+		SetCameraPositionForPlayer(p, menuStart.x + MENU_CAMERA_OFFSET_X, menuStart.y + MENU_CAMERA_OFFSET_Y)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_ANGLE_OF_ATTACK, MENU_CAMERA_ANGLE_OF_ATTACK, 1)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_FARZ, MENU_CAMERA_FARZ, 1)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_FIELD_OF_VIEW, MENU_CAMERA_FIELD_OF_VIEW, 1)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_ROLL, MENU_CAMERA_ROLL, 1)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_ROTATION, MENU_CAMERA_ROTATION, 1)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_TARGET_DISTANCE, MENU_CAMERA_TARGET_DISTANCE, 1)
+		SetCameraFieldForPlayer(p, CAMERA_FIELD_ZOFFSET, MENU_CAMERA_ZOFFSET, 1)
 		
 
 endpackage

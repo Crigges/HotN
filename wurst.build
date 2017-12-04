@@ -1,5 +1,6 @@
-projectName: HotN
+projectName: "HotN"
 dependencies: ['https://github.com/wurstscript/wurstStdlib2']
-buildMapName: DefaultName
-buildMapFileName: DefaultFileName
-buildMapAuthor: DefaultAuthor
+buildMapName: "HotN Testing"
+buildMapFileName: "HotNTerrainTest1"
+buildMapAuthor: "crig"
+

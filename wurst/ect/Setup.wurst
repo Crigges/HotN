@@ -1,5 +1,4 @@
 package Setup
-	import initlater OeSetup
 	import CDebugFile
 	import LinkedList
 	import TypeCasting
@@ -11,21 +10,21 @@ package Setup
 	//--------------------//
 	//------BonusMod------//
 	//--------------------//
-	
+
 	public function colorToIndex(color c) returns int
 		return c.red + (c.green * 256) + (c.blue * 65536)
-	
+
 	public function colorFromIndex(int i) returns color
 		return color(i mod 256, (i mod 65536) div 256, (i mod 16777216) div 65536)
-		
+
 	public function colorAToIndex(colorA c) returns int
 		return c.red + (c.green * 256) + (c.blue * 65536) + (c.alpha div 2 * 16777216)
-	
+
 	public function colorAFromIndex(int i) returns colorA
 		return colorA(i mod 256, (i mod 65536) div 256, (i mod 16777216) div 65536, (i div 16777216) * 2)
-	
+
 	public tuple bonData(int raw, int size)
-	
+
 	public function cBonData(int raw, int size) returns bonData
 		return bonData(raw, size)
 
@@ -34,8 +33,8 @@ package Setup
 
 	// public function playerToIndex(player p) returns int
 	// 	return GetPlayerId(p)
-		
-	
+
+
 	public timer timeTest = null
 	public constant int maxBonSize 				= 14
 	public constant int attackRaw 				= '(A)0' - '0'
@@ -52,17 +51,17 @@ package Setup
 	public constant int permAttackRaw 			= 'BMO0' - '0'
 
 	public int array attackPerm
-	
+
 	public HashList<int> preloadAbi = new HashList<int>()
 	public item array permAttackTome
 	public HashList<int> permAttackTomeId = new HashList<int>()
 	public int permAttackNegTomeId
 	public item permAttackNegTome
-	
+
 	//--------------------//
 	//----Other Stuff-----//
 	//--------------------//
-	
+
 	public constant DebugFile infoFile = new DebugFile("Info")
 	public constant DebugFile printFile = new DebugFile("Error")
 	public constant DebugFile debugFile = new DebugFile("Debug")
@@ -71,7 +70,7 @@ package Setup
 	public constant string team1 = "Wargrin"
 	public constant string team2 = "Everliving"
 	public constant vec2 recycleGraveyard = vec2(0, 0)
-	public constant vec2 menuStart = vec2(-2500, -1000)
+	public constant vec2 menuStart = vec2(-23000, -14000)
 	public constant hashtable trackBlacklist = InitHashtable()
 	public tuple element(int x, int y)
 	public constant int tileSize = 64
@@ -79,51 +78,62 @@ package Setup
 	public constant int menuWidth = 44
 	public constant real abilityLoadTime = 0.1
 	public constant real abilityLoadTimeLevelBonus = 0.03
+	public constant real MENU_CAMERA_ROTATION = 90.
+	public constant real MENU_CAMERA_FARZ = 5000.
+	public constant real MENU_CAMERA_FIELD_OF_VIEW = 40.
+	public constant real MENU_CAMERA_TARGET_DISTANCE = 4710.
+	public constant real MENU_CAMERA_ANGLE_OF_ATTACK = 270.
+	public constant real MENU_CAMERA_ZOFFSET = 0
+	public constant real MENU_CAMERA_ROLL = 0
+	public constant real MENU_CAMERA_OFFSET_X = tileSize * menuWidth / 2 + tileSize / 2
+	public constant real MENU_CAMERA_OFFSET_Y = tileSize * menuHeight / 2
+
+
 	public TrackableEx array tracks
-	
+
 	public function element.toVec() returns vec2
 		return vec2(this.x * tileSize * 1., this.y * tileSize * 1.)
-		
+
 	public function element.op_plus(element other) returns element
 		return element(this.x + other.x, this.y + other.y)
-		
+
 	public function element.op_minus(element other) returns element
 		return element(this.x - other.x, this.y - other.y)
-		
+
 	public function element.op_div(int i) returns element
 		return element(this.x div i, this.y div i)
-		
+
 	public function elementFromIndex(int index) returns element
 		return element(index mod 32768, index div 32768)
-		
+
 	public function elementToIndex(element e) returns int
 		return e.x + e.y * 32768
-		
+
 	public function vec2.toElement() returns element
 		return element(roundReal(this.x), roundReal(this.y))
-	
+
 	public function getTrackableAt(element pos) returns TrackableEx
 		return tracks[(menuWidth + 1) * pos.x + pos.y]
-		
+
 	public function setTrackableAt(element pos, TrackableEx tr)
 		tracks[(menuWidth + 1) * pos.x + pos.y] = tr
-		
+
 	public class ElementLoop
 		element a
 		element b
 		int start
-	
+
 		construct(element a, element b)
 			this.a = a
 			this.b = b
 			start = a.x
-			
+
 		function iterator() returns thistype
 			return this
-			
+
 		function hasNext() returns boolean
 			return (a.x <= b.x and a.y <= b.y)
-			
+
 		function next() returns element
 			element ret = a
 			if a.x >= b.x
@@ -132,17 +142,17 @@ package Setup
 			else
 				a.x++
 			return ret
-			
+
 		function close()
 			destroy this
-			
-			
-		
-		
+
+
+
+
 	init
 		trackBlacklist.saveBoolean(1, 1, true)
-		
-	
+
+
 	public enum Update
 		ATTACK //
 		ATTACKSPEED //
@@ -157,7 +167,7 @@ package Setup
 		MOVESPEED //
 		RESISTANCE //
 		CRITCHANCE //
-		CRITDAMAGE // 
+		CRITDAMAGE //
 		EVADE //
 		HITCHANCE //
 		NORMAL_REDUCTION //
@@ -169,7 +179,7 @@ package Setup
 		HEAL
 		SPELLPOWER //
 		MASS //
-	
+
 	public enum BonType
 		ATTACK // +
 		ATTACK_PER // +
@@ -187,7 +197,7 @@ package Setup
 		STR // +
 		STR_PER // +
 		LIFE // +
-		LIFE_PER // + 
+		LIFE_PER // +
 		LIFE_REG // +
 		LIFE_REG_PER // +
 		MANA // +
@@ -206,12 +216,12 @@ package Setup
 		MAGIC_DEFLECTION // +
 		NORMAL_DEFLECTION // +
 		LIFESTEAL // +
-		HEAL 
+		HEAL
 		SPELLPOWER // +
 		SPELLPOWER_PER // +
 		MASS // +
 		MASS_PER // +
-		
+
 	public enum TextType
 		DAMAGE
 		HEAL
@@ -219,11 +229,11 @@ package Setup
 		MISS
 		DODGE
 		GOLD
-		
+
 	public enum ButtonType
 		NORMAL
 		ICON
-		
+
 	public enum OpenTo
 		TOP_RIGHT
 		TOP_LEFT
@@ -232,16 +242,16 @@ package Setup
 		CENTER
 		AUTO
 
-		
+
 	public enum Team
 		Everliving
 		Wargrin
 
-	
+
 	public function roundReal(real value) returns integer
 		if value > 0
 			return R2I(value + 0.5)
 		else
 			return R2I(value - 0.5)
-		
+
 endpackage

@@ -18,10 +18,12 @@ public class Tooltip extends Widget
 		realPos = pos.toVec() + menuStart
 		
 	override function showDirect(player p)
-		int temp = dummyTip
+		real x = realPos.x
+		real y = realPos.y
 		if GetLocalPlayer() == p
-			temp = id
-		d = CreateDestructable(temp, realPos.x, realPos.y, 0, 8, 0)
+			x += 1000
+			y += 1000
+		d = CreateDestructable(id, x, y, 0, 8, 0)
 
 		doAfter(0.15, () -> RemoveDestructable(d))
 		
@@ -30,7 +32,7 @@ public class Tooltip extends Widget
 			EnablePreSelect(false, false)
 		doAfter(0.15, () -> begin
 			if GetLocalPlayer() == p
-				
+				EnablePreSelect(true, true)
 		end)
 		
 	override function enable(player p)

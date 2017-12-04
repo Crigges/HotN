@@ -25,6 +25,8 @@ package Spell
 	constant string notLearnedMessage = "NOT LEARNED YET"
 	constant string effectColor = ""
 	int array spellCost
+
+	public class Spell
 	
 	init
 		spellCost[1] = 3
